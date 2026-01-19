@@ -3,6 +3,79 @@ import puppeteer from 'puppeteer';
 
 const BASE_URL = 'https://www.partselect.com';
 
+// Singleton browser instance with idle timeout
+let browserInstance = null;
+let idleTimeout = null;
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes of inactivity
+
+function resetIdleTimeout() {
+  if (idleTimeout) {
+    clearTimeout(idleTimeout);
+  }
+  idleTimeout = setTimeout(async () => {
+    if (browserInstance) {
+      console.log("[BROWSER] Closing browser due to inactivity...");
+      await closeBrowser();
+    }
+  }, IDLE_TIMEOUT_MS);
+}
+
+async function getBrowser() {
+  if (!browserInstance) {
+    console.log("[BROWSER] Launching new browser instance...");
+    browserInstance = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    // Handle browser disconnection
+    browserInstance.on('disconnected', () => {
+      console.log("[BROWSER] Browser disconnected");
+      browserInstance = null;
+      if (idleTimeout) {
+        clearTimeout(idleTimeout);
+        idleTimeout = null;
+      }
+    });
+  }
+
+  // Reset idle timeout on each use
+  resetIdleTimeout();
+
+  return browserInstance;
+}
+
+// Close the browser (call when done with all operations)
+export async function closeBrowser() {
+  if (idleTimeout) {
+    clearTimeout(idleTimeout);
+    idleTimeout = null;
+  }
+  if (browserInstance) {
+    console.log("[BROWSER] Closing browser instance...");
+    await browserInstance.close();
+    browserInstance = null;
+  }
+}
+
+// Process exit handlers for cleanup
+process.on('exit', () => {
+  if (browserInstance) {
+    browserInstance.close();
+    browserInstance = null;
+  }
+});
+
+process.on('SIGINT', async () => {
+  await closeBrowser();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  await closeBrowser();
+  process.exit(0);
+});
+
 // Rate limiter: 60 requests per minute
 const RATE_LIMIT = 60;
 const RATE_WINDOW_MS = 60 * 1000; // 1 minute in milliseconds
@@ -36,20 +109,19 @@ async function waitForRateLimit() {
 async function fetchPageWithPuppeteer(url) {
   await waitForRateLimit();
   console.log("Fetching with Puppeteer:", url);
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+
+  const browser = await getBrowser();
+  // Use incognito context for fresh session each time
+  const context = await browser.createBrowserContext();
+  const page = await context.newPage();
 
   try {
-    const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
     const html = await page.content();
     return html;
   } finally {
-    await browser.close();
+    await context.close();
   }
 }
 
@@ -73,17 +145,16 @@ async function findPartSelectUrlViaSearch(partNumber) {
 
   const searchUrl = `${BASE_URL}/api/search/?searchterm=${encodeURIComponent(partNumber)}`;
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  await waitForRateLimit();
+  console.log("[PS-SEARCH] Navigating to:", searchUrl);
+
+  const browser = await getBrowser();
+  // Use incognito context for fresh session
+  const context = await browser.createBrowserContext();
+  const page = await context.newPage();
 
   try {
-    const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
-    await waitForRateLimit();
-    console.log("[PS-SEARCH] Navigating to:", searchUrl);
 
     // Navigate and follow redirects
     await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 30000 });
@@ -138,7 +209,7 @@ async function findPartSelectUrlViaSearch(partNumber) {
     console.log("[PS-SEARCH] Error:", error.message);
     return null;
   } finally {
-    await browser.close();
+    await context.close();
   }
 }
 
