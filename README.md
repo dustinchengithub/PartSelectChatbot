@@ -2,6 +2,20 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+To Run
+
+1. Add Anthropic API key to backend/.env
+#### cd case-study-main/backend
+#### touch .env
+
+Within the .env file, add an Anthropic API key 
+#### ANTHROPIC_API_KEY=sk-ant-...
+
+2. Install backend dependencies
+#### cd case-study-main/backend
+#### npm install
+
+
 ## Available Scripts
 
 In the project directory, you can run:
