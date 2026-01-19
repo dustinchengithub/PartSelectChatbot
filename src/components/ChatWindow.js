@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./ChatWindow.css";
 import { getAIMessage } from "../api/api";
 import { marked } from "marked";
+import PartCard from "./PartCard";
 
 function ChatWindow() {
 
@@ -49,6 +50,13 @@ function ChatWindow() {
                   {message.content && (
                       <div className={`message ${message.role}-message`}>
                           <div dangerouslySetInnerHTML={{__html: marked(message.content).replace(/<p>|<\/p>/g, "")}}></div>
+                          {message.parts && message.parts.length > 0 && (
+                              <div className="part-cards">
+                                  {message.parts.map((part, partIndex) => (
+                                      <PartCard key={partIndex} part={part} />
+                                  ))}
+                              </div>
+                          )}
                       </div>
                   )}
               </div>

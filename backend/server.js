@@ -21,7 +21,8 @@ app.post('/api/chat', async (req, res) => {
 
     res.json({
       role: 'assistant',
-      content: response
+      content: response.text,
+      parts: response.parts || []
     });
   } catch (error) {
     console.error('Chat error:', error);

@@ -9,8 +9,8 @@
   flex-direction: column;
   padding-bottom: 2px;
   font-size: 16px;
-  margin-top: 60px; 
-  margin-bottom: 70px; 
+  margin-top: 60px;
+  margin-bottom: 70px;
 }
 
 .user-message-container,
@@ -60,6 +60,29 @@
   font-size: 13px;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Markdown heading styles - closer in size to body text .assistant-message h1, */
+.assistant-message h2,
+.assistant-message h3,
+.assistant-message h4,
+.assistant-message h5,
+.assistant-message h6 {
+  margin-top: 12px;
+  margin-bottom: em;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/*
+First heading after intro text gets extra spacing .assistant-message h1:not(:first-child),
+.assistant-message h2:not(:first-child),
+.assistant-message h3:not(:first-child) {
+  margin-top: .5em;
+} */
+
+.part-cards {
+  margin-top: 12px;
 }
 
 ::-webkit-scrollbar {
@@ -148,10 +171,14 @@
 }
 
 @keyframes typing {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: scale(0.6);
     opacity: 0.4;
   }
+
   40% {
     transform: scale(1);
     opacity: 1;

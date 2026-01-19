@@ -335,6 +335,15 @@ function extractPartDetails($, partNumber) {
   const inStock = $('.pd__availability').text().toLowerCase().includes('in stock') ||
     $('.js-partAvailability').text().toLowerCase().includes('in stock');
 
+  // Get main product image
+  let imageUrl = $('.pd__main-image img').attr('src') ||
+    $('.js-mainImage').attr('src') ||
+    $('meta[property="og:image"]').attr('content') ||
+    '';
+  if (imageUrl && !imageUrl.startsWith('http')) {
+    imageUrl = `https://www.partselect.com${imageUrl}`;
+  }
+
   // Get installation/repair info
   const installationSteps = [];
   $('.repair-story__step, .pd__repair-step').each((i, el) => {
@@ -364,6 +373,7 @@ function extractPartDetails($, partNumber) {
     price,
     description: description.substring(0, 500),
     inStock,
+    imageUrl,
     installationSteps: installationSteps.slice(0, 10),
     videos: videos.slice(0, 3),
     symptoms: symptoms.slice(0, 10),

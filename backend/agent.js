@@ -94,6 +94,9 @@ export async function chat(messages) {
     content: msg.content
   }));
 
+  // Track part data retrieved during this conversation turn
+  const partsData = [];
+
   let response = await client.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 1024,
@@ -111,6 +114,11 @@ export async function chat(messages) {
       console.log(`Executing tool: ${toolUse.name}`, toolUse.input);
       const result = await executeTool(toolUse.name, toolUse.input);
       console.log(`Tool result:`, result);
+
+      // Capture part data for rich rendering
+      if (toolUse.name === "get_part_info" && result && !result.error) {
+        partsData.push(result);
+      }
 
       toolResults.push({
         type: "tool_result",
@@ -140,5 +148,11 @@ export async function chat(messages) {
 
   // Extract text response
   const textBlock = response.content.find(block => block.type === "text");
-  return textBlock ? textBlock.text : "I apologize, but I couldn't generate a response.";
+  const text = textBlock ? textBlock.text : "I apologize, but I couldn't generate a response.";
+
+  // Return both text and any part data
+  return {
+    text,
+    parts: partsData
+  };
 }
