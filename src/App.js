@@ -7,9 +7,10 @@ function App() {
   return (
     <div className="App">
       <div className="heading">
+        <img src="/logo.png" alt="PartSelect" className="logo" />
         Instalily Case Study
       </div>
-        <ChatWindow/>
+      <ChatWindow />
     </div>
   );
 }

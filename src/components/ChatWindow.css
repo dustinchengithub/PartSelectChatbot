@@ -104,8 +104,12 @@
   padding: 10px 20px;
   border: none;
   border-radius: 5px;
-  background-color: #121212;
+  background-color: #FF6600;
   color: white;
   cursor: pointer;
   font-size: 13px;
+}
+
+.input-area button:hover {
+  background-color: #e55c00;
 }
