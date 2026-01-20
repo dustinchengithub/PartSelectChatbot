@@ -85,6 +85,14 @@ First heading after intro text gets extra spacing .assistant-message h1:not(:fir
   margin-top: 12px;
 }
 
+.inactivity-message {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  padding: 12px 20px;
+  font-style: italic;
+}
+
 ::-webkit-scrollbar {
   display: none;
 }

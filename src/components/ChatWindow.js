@@ -4,6 +4,8 @@ import { getAIMessage } from "../api/api";
 import { marked } from "marked";
 import PartCard from "./PartCard";
 
+const API_URL = 'http://localhost:3001';
+
 function ChatWindow() {
 
   const defaultMessage = [{
@@ -14,6 +16,7 @@ function ChatWindow() {
   const [messages,setMessages] = useState(defaultMessage)
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showInactivityMessage, setShowInactivityMessage] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -23,10 +26,34 @@ function ChatWindow() {
 
   useEffect(() => {
       scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, showInactivityMessage]);
+
+  // Listen for browser inactivity events via SSE
+  useEffect(() => {
+    const eventSource = new EventSource(`${API_URL}/api/events`);
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.reason === 'inactivity') {
+        setShowInactivityMessage(true);
+      }
+    };
+
+    eventSource.onerror = () => {
+      // Silently handle connection errors (server might not be running)
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, []);
 
   const handleSend = async (input) => {
     if (input.trim() !== "" && !isLoading) {
+      // Clear inactivity message when user sends a new message
+      setShowInactivityMessage(false);
+
       const userMessage = { role: "user", content: input };
       const updatedMessages = [...messages, userMessage];
 
@@ -68,6 +95,11 @@ function ChatWindow() {
                       <span></span>
                       <span></span>
                   </div>
+              </div>
+          )}
+          {showInactivityMessage && (
+              <div className="inactivity-message">
+                  The agent has left the chat due to inactivity. Submit a message at any time to resume the conversation.
               </div>
           )}
           <div ref={messagesEndRef} />

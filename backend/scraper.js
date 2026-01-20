@@ -1,12 +1,16 @@
 import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
+import { EventEmitter } from 'events';
 
 const BASE_URL = 'https://www.partselect.com';
+
+// Event emitter for browser status updates
+export const browserEvents = new EventEmitter();
 
 // Singleton browser instance with idle timeout
 let browserInstance = null;
 let idleTimeout = null;
-const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes of inactivity
+const IDLE_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes of inactivity
 
 function resetIdleTimeout() {
   if (idleTimeout) {
@@ -15,7 +19,7 @@ function resetIdleTimeout() {
   idleTimeout = setTimeout(async () => {
     if (browserInstance) {
       console.log("[BROWSER] Closing browser due to inactivity...");
-      await closeBrowser();
+      await closeBrowser('inactivity');
     }
   }, IDLE_TIMEOUT_MS);
 }
@@ -46,7 +50,7 @@ async function getBrowser() {
 }
 
 // Close the browser (call when done with all operations)
-export async function closeBrowser() {
+export async function closeBrowser(reason = 'manual') {
   if (idleTimeout) {
     clearTimeout(idleTimeout);
     idleTimeout = null;
@@ -55,6 +59,11 @@ export async function closeBrowser() {
     console.log("[BROWSER] Closing browser instance...");
     await browserInstance.close();
     browserInstance = null;
+
+    // Emit event when browser closes due to inactivity
+    if (reason === 'inactivity') {
+      browserEvents.emit('closed', { reason: 'inactivity' });
+    }
   }
 }
 
@@ -314,6 +323,7 @@ export async function searchPart(partNumber) {
       const $ = cheerio.load(html);
       const partDetails = extractPartDetails($, partNumber);
       partDetails.sourceMethod = result.method;
+      partDetails.url = result.url;
 
       console.log("[SEARCH] Part details extracted successfully");
       return partDetails;

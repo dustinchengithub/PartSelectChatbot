@@ -2,12 +2,37 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { chat } from './agent.js';
+import { browserEvents } from './scraper.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// SSE endpoint for browser status updates
+const sseClients = new Set();
+
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  sseClients.add(res);
+
+  req.on('close', () => {
+    sseClients.delete(res);
+  });
+});
+
+// Forward browser events to SSE clients
+browserEvents.on('closed', (data) => {
+  const message = JSON.stringify(data);
+  sseClients.forEach(client => {
+    client.write(`data: ${message}\n\n`);
+  });
+});
 
 app.post('/api/chat', async (req, res) => {
   try {

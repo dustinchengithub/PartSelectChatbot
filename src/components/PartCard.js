@@ -2,7 +2,10 @@ import React from "react";
 import "./PartCard.css";
 
 function PartCard({ part }) {
-  const { partNumber, title, price, inStock, imageUrl, description } = part;
+  const { partNumber, title, price, inStock, imageUrl, description, url } = part;
+
+  // Use the actual URL if available, otherwise use PartSelect's search redirect
+  const partUrl = url || `https://www.partselect.com/api/search/?searchterm=${encodeURIComponent(partNumber)}`;
 
   return (
     <div className="part-card">
@@ -24,7 +27,7 @@ function PartCard({ part }) {
           <p className="part-card__description">{description}</p>
         )}
         <a
-          href={`https://www.partselect.com/${partNumber}.htm`}
+          href={partUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="part-card__link"
