@@ -134,20 +134,6 @@ async function fetchPageWithPuppeteer(url) {
   }
 }
 
-// Simple fetch for sites that don't block (like DuckDuckGo)
-async function fetchPageSimple(url) {
-  await waitForRateLimit();
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`);
-  }
-  return response.text();
-}
-
 // Use PartSelect's internal search endpoint (redirects to part page)
 async function findPartSelectUrlViaSearch(partNumber) {
   console.log("[PS-SEARCH] Searching PartSelect for:", partNumber);
